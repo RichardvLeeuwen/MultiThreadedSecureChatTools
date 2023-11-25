@@ -1,5 +1,6 @@
-import java.io.*;  
-import java.net.*;  
+import java.net.*;
+import java.util.ArrayList;
+import java.util.List;  
 
 
 public class ServerApp {
@@ -8,22 +9,18 @@ public class ServerApp {
     public static void main(String[] args) throws Exception {
         System.out.println("Booting up server");
         ServerSocket serverSocket = new ServerSocket(PORT);
+
+        List<Socket> globalClients =  new ArrayList<Socket> ();
+        Thread globalChatroomThread = new Thread(new Chatroom("Global", globalClients));
+        globalChatroomThread.start();
         Socket clientSocket = serverSocket.accept();
+        synchronized(globalClients) {
+            globalClients.add(clientSocket);
+        }
+        System.out.println("Added new client to chatroom Global");
+        
+        
 
-        DataInputStream serverInputStream = new DataInputStream(clientSocket.getInputStream());  
-        String clientGreeting = (String)serverInputStream.readUTF();  
-        System.out.println(clientGreeting);
-
-        DataOutputStream serverOutputStream = new DataOutputStream(clientSocket.getOutputStream());
-        serverOutputStream.writeUTF("Server says hello back");
-        serverOutputStream.flush();
-
-
-        serverOutputStream.flush();
-        serverOutputStream.close();
-        serverInputStream.close();
-        clientSocket.close();
         serverSocket.close();
-
     }
 }
