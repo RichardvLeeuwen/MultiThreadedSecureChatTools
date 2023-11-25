@@ -1,3 +1,5 @@
+package client;
+
 import java.io.*;  
 import java.net.*;  
 
@@ -17,7 +19,8 @@ public class ClientApp {
         DataInputStream clientInputStream = new DataInputStream(clientSocket.getInputStream());  
         String serverGreeting = (String)clientInputStream.readUTF();  
         System.out.println(serverGreeting);
-
+        serverGreeting = (String)clientInputStream.readUTF();  
+        System.out.println(serverGreeting);
         clientOutputStream.flush();
         clientOutputStream.close();
         clientSocket.close();
