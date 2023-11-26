@@ -50,11 +50,12 @@ public class Client implements Runnable {
                 break;
             }
             if(clientMessage != null) {
+                String nameAppendedMessage = name + ": " +clientMessage;
                 if(printOut){
                     System.out.println(clientMessage);
                     continue;
                 }
-                sendQueue.offer(clientMessage);
+                sendQueue.offer(nameAppendedMessage);
             }
         }
     }

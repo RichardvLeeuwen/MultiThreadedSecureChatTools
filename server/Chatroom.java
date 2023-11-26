@@ -70,12 +70,19 @@ public class Chatroom implements Runnable { //with adition of client threads, ch
                 for(Client client: allClients) { //check for new clients, if so add output streams and initialize client thread
                     if (!outputStreams.containsKey(client.getName()) ) {
                         try {
-                            System.out.println("New user " + client.getName() + " has entered chatroom" + this.name);
+                            String serverArrivalAnnouncement = "New user " + client.getName() + " has entered chatroom " + this.name;
+                            System.out.println(serverArrivalAnnouncement);
                             outputStreams.put(client.getName(), new DataOutputStream(client.getSocket().getOutputStream()));
                             client.setSendQueue(commandsQueue);
                             Thread newClientThread = new Thread(client);
                             newClientThread.start();
                             clientThreads.put(client.getName(), newClientThread);
+
+                            for (String nameStream : outputStreams.keySet()) { //announce to all users
+                                DataOutputStream stream = outputStreams.get(nameStream);
+                                stream.writeUTF(serverArrivalAnnouncement);
+                                stream.flush();  
+                            }
                         } catch (IOException e) {
                             e.printStackTrace();
                         }
@@ -86,8 +93,13 @@ public class Chatroom implements Runnable { //with adition of client threads, ch
             if(message == null) {
                 continue;
             }
-            for (DataOutputStream stream : outputStreams.values()) {
+            String[] messageParts = message.split(":",2);
+            for (String nameStream : outputStreams.keySet()) {
                 try {
+                    if(messageParts[0].equals(nameStream)) {
+                        continue;
+                    }
+                    DataOutputStream stream = outputStreams.get(nameStream);
                     stream.writeUTF(message);
                     stream.flush();  
                 } catch (IOException e) {
