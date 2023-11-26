@@ -23,15 +23,8 @@ public class ServerApp {
             }
             System.out.println("Added new client "+ String.valueOf(counter) +" to chatroom Global");
             counter++;
-            
-            // clientSocket = serverSocket.accept();
-            // Client clientTwo = new Client("two", clientSocket);
-            // synchronized(globalClients) {
-            //     globalClients.add(clientTwo);
-            // }
-            // System.out.println("Added new client to chatroom Global");
         }
 
-        //serverSocket.close();
+        //serverSocket.close(); todo, for when properly closing server
     }
 }

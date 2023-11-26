@@ -11,10 +11,12 @@ public class Client implements Runnable {
     private Socket socket;
     private ConcurrentLinkedQueue<String> sendQueue;
     private DataInputStream inputStream;
+    private Boolean printOut; //by default outputs to command line
 
     public Client(String name, Socket socket) {
         this.name = name;
         this.socket = socket;
+        this.printOut = true;
         try {
             this.inputStream = new DataInputStream(socket.getInputStream());
         } catch (IOException e) {
@@ -27,14 +29,15 @@ public class Client implements Runnable {
     public Socket getSocket() {
         return this.socket;
     }
-    public void setSendQueue(ConcurrentLinkedQueue<String> sendQueue) {
+    public void setSendQueue(ConcurrentLinkedQueue<String> sendQueue) { //when set, messages get forwarded to the send queue
         this.sendQueue = sendQueue;
+        this.printOut = false;
     }
 
     @Override
-    public void run() {
+    public void run() { //implement elegant way of killing the thread
         while(true) {
-            if (sendQueue == null) {
+            if (sendQueue == null && !printOut) {
                 break;
             }
             
@@ -47,6 +50,10 @@ public class Client implements Runnable {
                 break;
             }
             if(clientMessage != null) {
+                if(printOut){
+                    System.out.println(clientMessage);
+                    continue;
+                }
                 sendQueue.offer(clientMessage);
             }
         }
