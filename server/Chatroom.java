@@ -7,7 +7,7 @@ import java.util.List;
 import helper.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-public class Chatroom implements Runnable { //with adition of client threads, chatroom thread still needed?
+public class Chatroom implements Runnable {
    
     private String name;
     private List<Client> allClients;
@@ -62,9 +62,6 @@ public class Chatroom implements Runnable { //with adition of client threads, ch
                     if(name != "Global") {
                         System.out.println("Chatroom is empty and killed");
                         break;
-                    }
-                    else {
-                        //System.out.println("Global chatroom is empty");
                     }
                 }
                 for(Client client: allClients) { //check for new clients, if so add output streams and initialize client thread
