@@ -9,7 +9,7 @@ public class Client implements Runnable {
    
     private String name;
     private Socket socket;
-    private ConcurrentLinkedQueue<String> chatroomQueue;
+    private ConcurrentLinkedQueue<String> sendQueue;
     private DataInputStream inputStream;
 
     public Client(String name, Socket socket) {
@@ -27,14 +27,14 @@ public class Client implements Runnable {
     public Socket getSocket() {
         return this.socket;
     }
-    public void setChatroomQueue(ConcurrentLinkedQueue<String> chatroomQueue) {
-        this.chatroomQueue = chatroomQueue;
+    public void setSendQueue(ConcurrentLinkedQueue<String> sendQueue) {
+        this.sendQueue = sendQueue;
     }
 
     @Override
     public void run() {
         while(true) {
-            if (chatroomQueue == null) {
+            if (sendQueue == null) {
                 break;
             }
             
@@ -47,7 +47,7 @@ public class Client implements Runnable {
                 break;
             }
             if(clientMessage != null) {
-                chatroomQueue.offer(clientMessage);
+                sendQueue.offer(clientMessage);
             }
         }
     }

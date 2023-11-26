@@ -67,12 +67,12 @@ public class Chatroom implements Runnable { //with adition of client threads, ch
                         //System.out.println("Global chatroom is empty");
                     }
                 }
-                for(Client client: allClients) { //check for new clients and add their output streams
+                for(Client client: allClients) { //check for new clients, if so add output streams and initialize client thread
                     if (!outputStreams.containsKey(client.getName()) ) {
                         try {
                             System.out.println("New user " + client.getName() + " has entered chatroom" + this.name);
                             outputStreams.put(client.getName(), new DataOutputStream(client.getSocket().getOutputStream()));
-                            client.setChatroomQueue(commandsQueue);
+                            client.setSendQueue(commandsQueue);
                             Thread newClientThread = new Thread(client);
                             newClientThread.start();
                             clientThreads.put(client.getName(), newClientThread);
@@ -88,7 +88,6 @@ public class Chatroom implements Runnable { //with adition of client threads, ch
             }
             for (DataOutputStream stream : outputStreams.values()) {
                 try {
-                    //stream.writeUTF("test");
                     stream.writeUTF(message);
                     stream.flush();  
                 } catch (IOException e) {
@@ -96,28 +95,6 @@ public class Chatroom implements Runnable { //with adition of client threads, ch
                 }  
             }
             message=null;
-        //     try {
-                
-        //         // DataInputStream serverInputStream;
-        //         // serverInputStream = new DataInputStream(clientSocket.getInputStream());
-            
-        //         // String clientGreeting;
-                
-        //         // clientGreeting = (String)serverInputStream.readUTF();
-        //         // System.out.println(clientGreeting);
-
-        //         // DataOutputStream serverOutputStream = new DataOutputStream(clientSocket.getOutputStream());
-        //         // serverOutputStream.writeUTF("Server says hello back");
-        //         // serverOutputStream.flush();
-
-
-        //         // serverOutputStream.flush();
-        //         // serverOutputStream.close();
-        //         // serverInputStream.close();
-        //         // clientSocket.close();
-        //     } catch (IOException e) {
-        //         e.printStackTrace();
-        //     }
         }
         
     }

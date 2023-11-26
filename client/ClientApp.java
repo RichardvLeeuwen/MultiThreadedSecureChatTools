@@ -2,7 +2,8 @@ package client;
 
 import java.io.*;  
 import java.net.*;  
-
+import helper.*;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class ClientApp {
     private static final int SERVERPORT = 5000;
@@ -12,6 +13,8 @@ public class ClientApp {
         InetAddress serverInetAddress = InetAddress.getByName(SERVERADDRESS);
         Socket clientSocket = new Socket(serverInetAddress, SERVERPORT);
 
+        Client client = new Client("Rich", clientSocket);
+        
         DataOutputStream clientOutputStream = new DataOutputStream(clientSocket.getOutputStream());
         clientOutputStream.writeUTF("Client says hello");
         clientOutputStream.flush();
@@ -21,6 +24,8 @@ public class ClientApp {
         System.out.println(serverGreeting);
         serverGreeting = (String)clientInputStream.readUTF();  
         System.out.println(serverGreeting);
+
+
         clientOutputStream.flush();
         clientOutputStream.close();
         clientSocket.close();
