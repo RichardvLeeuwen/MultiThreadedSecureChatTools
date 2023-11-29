@@ -7,7 +7,7 @@ import java.util.List;
 import helper.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-public class Chatroom implements Runnable { //with adition of client threads, chatroom thread still needed?
+public class Chatroom implements Runnable {
    
     private String name;
     private List<Client> allClients;
@@ -21,6 +21,11 @@ public class Chatroom implements Runnable { //with adition of client threads, ch
         this.commandsQueue = new ConcurrentLinkedQueue<String>();
         this.outputStreams = new HashMap<String, DataOutputStream>();
         this.clientThreads = new HashMap<String, Thread>();
+    }
+
+    public String getUserNames() {
+        String allUserNames = String.join(", ", clientThreads.keySet());
+        return allUserNames;
     }
 
     @Override
@@ -63,19 +68,23 @@ public class Chatroom implements Runnable { //with adition of client threads, ch
                         System.out.println("Chatroom is empty and killed");
                         break;
                     }
-                    else {
-                        //System.out.println("Global chatroom is empty");
-                    }
                 }
-                for(Client client: allClients) { //check for new clients and add their output streams
+                for(Client client: allClients) { //check for new clients, if so add output streams and initialize client thread
                     if (!outputStreams.containsKey(client.getName()) ) {
                         try {
-                            System.out.println("New user " + client.getName() + " has entered chatroom" + this.name);
+                            String serverArrivalAnnouncement = "New user " + client.getName() + " has entered chatroom " + this.name;
+                            System.out.println(serverArrivalAnnouncement);
                             outputStreams.put(client.getName(), new DataOutputStream(client.getSocket().getOutputStream()));
-                            client.setChatroomQueue(commandsQueue);
+                            client.setSendQueue(commandsQueue);
                             Thread newClientThread = new Thread(client);
                             newClientThread.start();
                             clientThreads.put(client.getName(), newClientThread);
+
+                            for (String nameStream : outputStreams.keySet()) { //announce to all users
+                                DataOutputStream stream = outputStreams.get(nameStream);
+                                stream.writeUTF(serverArrivalAnnouncement);
+                                stream.flush();  
+                            }
                         } catch (IOException e) {
                             e.printStackTrace();
                         }
@@ -86,9 +95,61 @@ public class Chatroom implements Runnable { //with adition of client threads, ch
             if(message == null) {
                 continue;
             }
-            for (DataOutputStream stream : outputStreams.values()) {
+            String[] messageParts = message.split(":",2);
+            if(messageParts[1].startsWith(" /")) { 
+                String[] commandString = messageParts[1].split(" ", 4); //best stripped but works fine for now
+                if(commandString[1].equals("/users")) { //considering a switch with functions for later
+                    DataOutputStream stream = outputStreams.get(messageParts[0]);
+                    try {
+                        stream.writeUTF(getUserNames());
+                        stream.flush();
+                         message=null;
+                         continue;
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    } 
+                }
+                if(commandString[1].equals("/whisper")) { //TODO: clean up error checking and modulise into functions
+                    if(commandString.length < 3) {
+                        DataOutputStream stream = outputStreams.get(messageParts[0]);
+                        try {
+                            stream.writeUTF("Please specify whisper target");
+                            stream.flush();
+                            message=null;
+                            continue;
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                    DataOutputStream stream = outputStreams.get(commandString[2]);
+                    if(stream == null) {
+                        stream = outputStreams.get(messageParts[0]);
+                        try {
+                            stream.writeUTF("Invalid target");
+                            stream.flush();
+                            message=null;
+                            continue;
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                    try {
+                        stream.writeUTF(message);
+                        stream.flush();
+                        message=null;
+                         continue;
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    }
+            }
+
+            for (String nameStream : outputStreams.keySet()) {
                 try {
-                    //stream.writeUTF("test");
+                    if(messageParts[0].equals(nameStream)) {
+                        continue;
+                    }
+                    DataOutputStream stream = outputStreams.get(nameStream);
                     stream.writeUTF(message);
                     stream.flush();  
                 } catch (IOException e) {
@@ -96,28 +157,6 @@ public class Chatroom implements Runnable { //with adition of client threads, ch
                 }  
             }
             message=null;
-        //     try {
-                
-        //         // DataInputStream serverInputStream;
-        //         // serverInputStream = new DataInputStream(clientSocket.getInputStream());
-            
-        //         // String clientGreeting;
-                
-        //         // clientGreeting = (String)serverInputStream.readUTF();
-        //         // System.out.println(clientGreeting);
-
-        //         // DataOutputStream serverOutputStream = new DataOutputStream(clientSocket.getOutputStream());
-        //         // serverOutputStream.writeUTF("Server says hello back");
-        //         // serverOutputStream.flush();
-
-
-        //         // serverOutputStream.flush();
-        //         // serverOutputStream.close();
-        //         // serverInputStream.close();
-        //         // clientSocket.close();
-        //     } catch (IOException e) {
-        //         e.printStackTrace();
-        //     }
         }
         
     }

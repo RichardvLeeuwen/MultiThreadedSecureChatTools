@@ -9,12 +9,14 @@ public class Client implements Runnable {
    
     private String name;
     private Socket socket;
-    private ConcurrentLinkedQueue<String> chatroomQueue;
+    private ConcurrentLinkedQueue<String> sendQueue;
     private DataInputStream inputStream;
+    private Boolean printOut; //by default outputs to command line
 
     public Client(String name, Socket socket) {
         this.name = name;
         this.socket = socket;
+        this.printOut = true;
         try {
             this.inputStream = new DataInputStream(socket.getInputStream());
         } catch (IOException e) {
@@ -27,14 +29,15 @@ public class Client implements Runnable {
     public Socket getSocket() {
         return this.socket;
     }
-    public void setChatroomQueue(ConcurrentLinkedQueue<String> chatroomQueue) {
-        this.chatroomQueue = chatroomQueue;
+    public void setSendQueue(ConcurrentLinkedQueue<String> sendQueue) { //when set, messages get forwarded to the send queue
+        this.sendQueue = sendQueue;
+        this.printOut = false;
     }
 
     @Override
-    public void run() {
+    public void run() { //implement elegant way of killing the thread
         while(true) {
-            if (chatroomQueue == null) {
+            if (sendQueue == null && !printOut) {
                 break;
             }
             
@@ -47,11 +50,13 @@ public class Client implements Runnable {
                 break;
             }
             if(clientMessage != null) {
-                chatroomQueue.offer(clientMessage);
+                String nameAppendedMessage = name + ": " +clientMessage;
+                if(printOut){
+                    System.out.println(clientMessage);
+                    continue;
+                }
+                sendQueue.offer(nameAppendedMessage);
             }
         }
     }
-
-    
-        
 }

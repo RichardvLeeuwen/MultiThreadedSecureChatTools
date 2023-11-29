@@ -1,26 +1,37 @@
 package client;
 
 import java.io.*;  
-import java.net.*;  
+import java.net.*;
+import java.util.Scanner;
 
+import helper.*;
 
 public class ClientApp {
     private static final int SERVERPORT = 5000;
     private static final String SERVERADDRESS = "127.0.0.1";
+
     public static void main(String[] args) throws Exception {
         System.out.println("Booting up client");
         InetAddress serverInetAddress = InetAddress.getByName(SERVERADDRESS);
         Socket clientSocket = new Socket(serverInetAddress, SERVERPORT);
 
-        DataOutputStream clientOutputStream = new DataOutputStream(clientSocket.getOutputStream());
-        clientOutputStream.writeUTF("Client says hello");
-        clientOutputStream.flush();
+    
+        Client client = new Client("Rich", clientSocket);
+        Thread newClientThread = new Thread(client);
+        newClientThread.start();
 
-        DataInputStream clientInputStream = new DataInputStream(clientSocket.getInputStream());  
-        String serverGreeting = (String)clientInputStream.readUTF();  
-        System.out.println(serverGreeting);
-        serverGreeting = (String)clientInputStream.readUTF();  
-        System.out.println(serverGreeting);
+        DataOutputStream clientOutputStream = new DataOutputStream(clientSocket.getOutputStream());
+        Scanner consoleInputScanner = new Scanner(System.in);
+
+        while(true) {
+            String input = consoleInputScanner.nextLine();
+            if(input.equals("/exit")) {
+                break;
+            }
+            clientOutputStream.writeUTF(input);
+            clientOutputStream.flush();
+        }
+        consoleInputScanner.close(); 
         clientOutputStream.flush();
         clientOutputStream.close();
         clientSocket.close();

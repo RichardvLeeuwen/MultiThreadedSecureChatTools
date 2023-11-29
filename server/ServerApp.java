@@ -1,7 +1,9 @@
 package server;
 import java.net.*;
 import java.util.ArrayList;
-import java.util.List;  
+import java.util.List;
+import java.util.concurrent.ConcurrentLinkedQueue;
+
 import helper.*;
 
 public class ServerApp {
@@ -11,27 +13,25 @@ public class ServerApp {
         System.out.println("Booting up server");
         ServerSocket serverSocket = new ServerSocket(PORT);
 
-        List<Client> globalClients =  new ArrayList<Client> ();
-        Thread globalChatroomThread = new Thread(new Chatroom("Global", globalClients));
+        
+
+        List<Client> newClients =  new ArrayList<Client> ();
+        Thread globalChatroomThread = new Thread(new Chatroom("Global", newClients));
         globalChatroomThread.start();
-        int counter = 0;
+
+
+        ConcurrentLinkedQueue<Socket> loginQueue = new ConcurrentLinkedQueue<Socket>();
+        Thread loginThread = new Thread(new LoginHandler(loginQueue, newClients));
+        loginThread.start();
+
+
+
         while(true) {
             Socket clientSocket = serverSocket.accept();
-            Client clientOne = new Client(String.valueOf(counter), clientSocket);
-            synchronized(globalClients) {
-                globalClients.add(clientOne);
-            }
-            System.out.println("Added new client "+ String.valueOf(counter) +" to chatroom Global");
-            counter++;
+            loginQueue.offer(clientSocket);
             
-            // clientSocket = serverSocket.accept();
-            // Client clientTwo = new Client("two", clientSocket);
-            // synchronized(globalClients) {
-            //     globalClients.add(clientTwo);
-            // }
-            // System.out.println("Added new client to chatroom Global");
         }
 
-        //serverSocket.close();
+        //serverSocket.close(); todo, for when properly closing server
     }
 }
