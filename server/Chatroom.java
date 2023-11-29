@@ -23,6 +23,11 @@ public class Chatroom implements Runnable {
         this.clientThreads = new HashMap<String, Thread>();
     }
 
+    public String getUserNames() {
+        String allUserNames = String.join(", ", clientThreads.keySet());
+        return allUserNames;
+    }
+
     @Override
     public void run() { //could change use of sockets into socket channels but SSL engine with socket channels sucks
         System.out.println("Booting up chatroom "+name);
@@ -91,6 +96,22 @@ public class Chatroom implements Runnable {
                 continue;
             }
             String[] messageParts = message.split(":",2);
+            if(messageParts[1].startsWith(" /")) { 
+                String[] commandString = messageParts[1].split(" ", 3); //best stripped but works fine for now
+                if(commandString[1].equals("/users")) { //considering a switch with functions for later
+                    DataOutputStream stream = outputStreams.get(messageParts[0]);
+                    try {
+                        stream.writeUTF(getUserNames());
+                        stream.flush();
+                         message=null;
+                         continue;
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    
+                }
+            }
+
             for (String nameStream : outputStreams.keySet()) {
                 try {
                     if(messageParts[0].equals(nameStream)) {
