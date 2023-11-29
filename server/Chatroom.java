@@ -97,7 +97,7 @@ public class Chatroom implements Runnable {
             }
             String[] messageParts = message.split(":",2);
             if(messageParts[1].startsWith(" /")) { 
-                String[] commandString = messageParts[1].split(" ", 3); //best stripped but works fine for now
+                String[] commandString = messageParts[1].split(" ", 4); //best stripped but works fine for now
                 if(commandString[1].equals("/users")) { //considering a switch with functions for later
                     DataOutputStream stream = outputStreams.get(messageParts[0]);
                     try {
@@ -107,9 +107,41 @@ public class Chatroom implements Runnable {
                          continue;
                     } catch (IOException e) {
                         e.printStackTrace();
-                    }
-                    
+                    } 
                 }
+                if(commandString[1].equals("/whisper")) { //TODO: clean up error checking and modulise into functions
+                    if(commandString.length < 3) {
+                        DataOutputStream stream = outputStreams.get(messageParts[0]);
+                        try {
+                            stream.writeUTF("Please specify whisper target");
+                            stream.flush();
+                            message=null;
+                            continue;
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                    DataOutputStream stream = outputStreams.get(commandString[2]);
+                    if(stream == null) {
+                        stream = outputStreams.get(messageParts[0]);
+                        try {
+                            stream.writeUTF("Invalid target");
+                            stream.flush();
+                            message=null;
+                            continue;
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                    try {
+                        stream.writeUTF(message);
+                        stream.flush();
+                        message=null;
+                         continue;
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    }
             }
 
             for (String nameStream : outputStreams.keySet()) {
