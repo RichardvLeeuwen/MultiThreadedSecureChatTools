@@ -6,6 +6,6 @@ Currently, on the serverside, each client has its own separate thread for receiv
 
 ## Currently accepted commands
 /users: retrieves the names of all users currently in the chatroom\
-/whisper [target] [messages]: sends a personal message to target only the target is able to read. Target must be in the same chatroom.\
+/whisper [target] [message]: sends a personal message to target only the target is able to read. Target must be in the same chatroom.\
 /cheatechatroom [chatroomname]: creates a new chatroom that the user automatically joins. New chatrooms can only be created from the global chatroom.\
 /chatrooms: retrieves the names of all chatrooms currently active
