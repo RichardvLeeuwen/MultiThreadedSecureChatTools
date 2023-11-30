@@ -28,6 +28,60 @@ public class Chatroom implements Runnable {
         return allUserNames;
     }
 
+    private boolean updateActiveClientList() { //returns false if client list empty, true if not
+        synchronized(allClients) { //expensive potentially, will look into alternatives
+            List<String> toBeRemovedName = new ArrayList<String>();
+            List<Client> toBeRemovedClient = new ArrayList<Client>(); //painfully awkward
+            for (String name : clientThreads.keySet()) {
+                Thread thread = clientThreads.get(name);
+                if(!thread.isAlive()) {
+                    toBeRemovedName.add(name);
+                    for (Client client : allClients) {
+                        if(client.getName() == name) {
+                            toBeRemovedClient.add(client);
+                        }
+                    }
+                }
+            }
+            
+            for(String name : toBeRemovedName) { //removal
+                clientThreads.remove(name);
+                outputStreams.remove(name);
+            }
+            for (Client client : toBeRemovedClient) {
+                allClients.remove(client);
+            }
+            if(allClients.isEmpty()) { //close chatroom once empty except if global
+                if(name != "Global") {
+                    System.out.println("Chatroom is empty and killed");
+                    return false;
+                }
+            }
+            for(Client client: allClients) { //check for new clients, if so add output streams and initialize client thread
+                if (!outputStreams.containsKey(client.getName()) ) {
+                    try {
+                        String serverArrivalAnnouncement = "New user " + client.getName() + " has entered chatroom " + this.name;
+                        System.out.println(serverArrivalAnnouncement);
+                        outputStreams.put(client.getName(), new DataOutputStream(client.getSocket().getOutputStream()));
+                        client.setSendQueue(commandsQueue);
+                        Thread newClientThread = new Thread(client);
+                        newClientThread.start();
+                        clientThreads.put(client.getName(), newClientThread);
+
+                        for (String nameStream : outputStreams.keySet()) { //announce to all users
+                            DataOutputStream stream = outputStreams.get(nameStream);
+                            stream.writeUTF(serverArrivalAnnouncement);
+                            stream.flush();  
+                        }
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }
+        return true;
+    }
+
     @Override
     public void run() { //could change use of sockets into socket channels but SSL engine with socket channels sucks
         System.out.println("Booting up chatroom "+name);
@@ -41,56 +95,8 @@ public class Chatroom implements Runnable {
         }
 
         while(true) {
-            synchronized(allClients) { //expensive potentially, will look into alternatives
-                List<String> toBeRemovedName = new ArrayList<String>();
-                List<Client> toBeRemovedClient = new ArrayList<Client>(); //painfully awkward
-                for (String name : clientThreads.keySet()) {
-                    Thread thread = clientThreads.get(name);
-                    if(!thread.isAlive()) {
-                        toBeRemovedName.add(name);
-                        for (Client client : allClients) {
-                            if(client.getName() == name) {
-                                toBeRemovedClient.add(client);
-                            }
-                        }
-                    }
-                }
-                
-                for(String name : toBeRemovedName) { //removal
-                    clientThreads.remove(name);
-                    outputStreams.remove(name);
-                }
-                for (Client client : toBeRemovedClient) {
-                    allClients.remove(client);
-                }
-                if(allClients.isEmpty()) { //close chatroom once empty except if global
-                    if(name != "Global") {
-                        System.out.println("Chatroom is empty and killed");
-                        break;
-                    }
-                }
-                for(Client client: allClients) { //check for new clients, if so add output streams and initialize client thread
-                    if (!outputStreams.containsKey(client.getName()) ) {
-                        try {
-                            String serverArrivalAnnouncement = "New user " + client.getName() + " has entered chatroom " + this.name;
-                            System.out.println(serverArrivalAnnouncement);
-                            outputStreams.put(client.getName(), new DataOutputStream(client.getSocket().getOutputStream()));
-                            client.setSendQueue(commandsQueue);
-                            Thread newClientThread = new Thread(client);
-                            newClientThread.start();
-                            clientThreads.put(client.getName(), newClientThread);
-
-                            for (String nameStream : outputStreams.keySet()) { //announce to all users
-                                DataOutputStream stream = outputStreams.get(nameStream);
-                                stream.writeUTF(serverArrivalAnnouncement);
-                                stream.flush();  
-                            }
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                }
-            }
+            if (!updateActiveClientList()) break;
+            
             String message = commandsQueue.poll(); //queue can have commands or messages to send
             if(message == null) {
                 continue;
