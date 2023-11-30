@@ -82,6 +82,66 @@ public class Chatroom implements Runnable {
         return true;
     }
 
+    private void processCommand(String message) {
+        String[] messageParts = message.split(":",2);
+        if(messageParts[1].startsWith(" /")) { 
+            String[] commandString = messageParts[1].split(" ", 4); //best stripped but works fine for now
+            if(commandString[1].equals("/users")) { //considering a switch with functions for later
+                DataOutputStream stream = outputStreams.get(messageParts[0]);
+                try {
+                    stream.writeUTF(getUserNames());
+                    stream.flush();
+                    return;
+                } catch (IOException e) {
+                    e.printStackTrace();
+                } 
+            }
+            if(commandString[1].equals("/whisper")) { //TODO: clean up error checking and modulise into functions
+                if(commandString.length < 3) {
+                    DataOutputStream stream = outputStreams.get(messageParts[0]);
+                    try {
+                        stream.writeUTF("Please specify whisper target");
+                        stream.flush();
+                        return;
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+                DataOutputStream stream = outputStreams.get(commandString[2]);
+                if(stream == null) {
+                    stream = outputStreams.get(messageParts[0]);
+                    try {
+                        stream.writeUTF("Invalid target");
+                        stream.flush();
+                        return;
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+                try {
+                    stream.writeUTF(message);
+                    stream.flush();
+                    return;
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                }
+        }
+
+        for (String nameStream : outputStreams.keySet()) {
+            try {
+                if(messageParts[0].equals(nameStream)) {
+                    continue;
+                }
+                DataOutputStream stream = outputStreams.get(nameStream);
+                stream.writeUTF(message);
+                stream.flush();  
+            } catch (IOException e) {
+                e.printStackTrace();
+            }  
+        }
+    }
+
     @Override
     public void run() { //could change use of sockets into socket channels but SSL engine with socket channels sucks
         System.out.println("Booting up chatroom "+name);
@@ -96,73 +156,11 @@ public class Chatroom implements Runnable {
 
         while(true) {
             if (!updateActiveClientList()) break;
-            
-            String message = commandsQueue.poll(); //queue can have commands or messages to send
-            if(message == null) {
-                continue;
-            }
-            String[] messageParts = message.split(":",2);
-            if(messageParts[1].startsWith(" /")) { 
-                String[] commandString = messageParts[1].split(" ", 4); //best stripped but works fine for now
-                if(commandString[1].equals("/users")) { //considering a switch with functions for later
-                    DataOutputStream stream = outputStreams.get(messageParts[0]);
-                    try {
-                        stream.writeUTF(getUserNames());
-                        stream.flush();
-                         message=null;
-                         continue;
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    } 
-                }
-                if(commandString[1].equals("/whisper")) { //TODO: clean up error checking and modulise into functions
-                    if(commandString.length < 3) {
-                        DataOutputStream stream = outputStreams.get(messageParts[0]);
-                        try {
-                            stream.writeUTF("Please specify whisper target");
-                            stream.flush();
-                            message=null;
-                            continue;
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                    DataOutputStream stream = outputStreams.get(commandString[2]);
-                    if(stream == null) {
-                        stream = outputStreams.get(messageParts[0]);
-                        try {
-                            stream.writeUTF("Invalid target");
-                            stream.flush();
-                            message=null;
-                            continue;
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                    try {
-                        stream.writeUTF(message);
-                        stream.flush();
-                        message=null;
-                         continue;
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                    }
-            }
 
-            for (String nameStream : outputStreams.keySet()) {
-                try {
-                    if(messageParts[0].equals(nameStream)) {
-                        continue;
-                    }
-                    DataOutputStream stream = outputStreams.get(nameStream);
-                    stream.writeUTF(message);
-                    stream.flush();  
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }  
-            }
-            message=null;
+            String message = commandsQueue.poll(); //queue can have commands or messages to send
+            if(message == null) continue;
+ 
+            processCommand(message);
         }
         
     }
