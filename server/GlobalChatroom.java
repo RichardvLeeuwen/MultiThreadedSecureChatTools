@@ -37,8 +37,6 @@ public class GlobalChatroom extends Chatroom { //global chatroom allows for the 
         }
     }
 
-
-
     private void executeCreateChatroomCommand(String[] commandParts, String senderName) {
         if(commandParts.length < 3) {
             DataOutputStream stream = outputStreams.get(senderName);
