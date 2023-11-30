@@ -62,6 +62,7 @@ public class Chatroom implements Runnable {
                     try {
                         String serverArrivalAnnouncement = "New user " + client.getName() + " has entered chatroom " + this.name;
                         System.out.println(serverArrivalAnnouncement);
+                        
                         outputStreams.put(client.getName(), new DataOutputStream(client.getSocket().getOutputStream()));
                         client.setSendQueue(commandsQueue);
                         Thread newClientThread = new Thread(client);
@@ -149,6 +150,8 @@ public class Chatroom implements Runnable {
                     return;
                 case "/whisper":
                     executeWhisperCommand(commandParts, splitCommand[0], commandParts[2], command);
+                    return;
+                case "/leave": //todo leave chatroom
                     return;
                 default:
                     DataOutputStream stream = outputStreams.get(splitCommand[0]);

@@ -7,11 +7,17 @@ import java.util.List;
 import helper.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-public class GlobalChatroom extends Chatroom {
+public class GlobalChatroom extends Chatroom { //global chatroom allows for the creation of new chatrooms and joining chatrooms. 
 
+    private HashMap<String, Thread> chatroomThreads;
 
     GlobalChatroom(String name, List<Client> allClients) {
         super(name, allClients);
+        this.chatroomThreads = new HashMap<String, Thread>();
+    }
+
+    private void updateActiveChatroomsList() { //todo update active chatroom list
+
     }
 
     @Override
@@ -45,6 +51,21 @@ public class GlobalChatroom extends Chatroom {
         else {
             broadcastMessage(command, splitCommand[0]);
         }
+    }
+
+    @Override
+    public void run() { //could change use of sockets into socket channels but SSL engine with socket channels sucks
+        System.out.println("Booting up chatroom "+name);
+        
+        while(true) {
+            updateActiveClientList();
+            updateActiveChatroomsList();
+            String command = commandsQueue.poll(); //queue can have commands or messages to send
+            if(command == null) continue;
+ 
+            processCommand(command);
+        }
+        
     }
 
 
