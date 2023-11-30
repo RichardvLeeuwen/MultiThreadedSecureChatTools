@@ -17,20 +17,27 @@ public class GlobalChatroom extends Chatroom { //global chatroom allows for the 
         this.chatroomClientLists = new HashMap<String, List<Client>>();
     }
 
+    public String getChatroomNames() {
+        String allChatroomNames = String.join(", ", chatroomThreads.keySet());
+        return allChatroomNames;
+    }
+
     private void updateActiveChatroomsList() { //todo update active chatroom list
 
     }
 
-    private Client returnClientFromName(String name) {
-        synchronized(allClients) {
-            for(Client client : allClients) {
-                if(name.equals(client.getName())) {
-                    return client;
-                }
-            }
+    private void executeChatroomsCommand(String senderName) { //send sender a list of all active usernames
+        DataOutputStream stream = outputStreams.get(senderName);
+        try {
+            stream.writeUTF(getChatroomNames());
+            stream.flush();
+            return;
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-        return null;
     }
+
+
 
     private void executeCreateChatroomCommand(String[] commandParts, String senderName) {
         if(commandParts.length < 3) {
@@ -75,6 +82,9 @@ public class GlobalChatroom extends Chatroom { //global chatroom allows for the 
             switch(commandParts[1]) {
                 case "/users":
                     executeUsersCommand(splitCommand[0]);
+                    return;
+                case "/chatrooms":
+                    executeChatroomsCommand(splitCommand[0]);
                     return;
                 case "/whisper":
                     executeWhisperCommand(commandParts, splitCommand[0],  command);

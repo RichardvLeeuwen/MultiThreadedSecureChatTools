@@ -28,6 +28,17 @@ public class Chatroom implements Runnable {
         return allUserNames;
     }
 
+    protected Client returnClientFromName(String name) {
+        synchronized(allClients) {
+            for(Client client : allClients) {
+                if(name.equals(client.getName())) {
+                    return client;
+                }
+            }
+        }
+        return null;
+    }
+
     protected boolean updateActiveClientList() { //returns false if client list empty, true if not
         synchronized(allClients) { //expensive potentially, will look into alternatives
             List<String> toBeRemovedName = new ArrayList<String>();
