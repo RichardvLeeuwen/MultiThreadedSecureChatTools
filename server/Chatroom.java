@@ -82,8 +82,23 @@ public class Chatroom implements Runnable {
         return true;
     }
 
-    private void processCommand(String message) {
-        String[] messageParts = message.split(":",2);
+    private void broadcastMessage(String message, String messageOwner) { //broadcast except to message owner
+        for (String nameStream : outputStreams.keySet()) {
+            try {
+                if(messageOwner.equals(nameStream)) {
+                    continue;
+                }
+                DataOutputStream stream = outputStreams.get(nameStream);
+                stream.writeUTF(message);
+                stream.flush();  
+            } catch (IOException e) {
+                e.printStackTrace();
+            }  
+        }
+    }
+
+    private void processCommand(String command) {
+        String[] messageParts = command.split(":",2);
         if(messageParts[1].startsWith(" /")) { 
             String[] commandString = messageParts[1].split(" ", 4); //best stripped but works fine for now
             if(commandString[1].equals("/users")) { //considering a switch with functions for later
@@ -119,27 +134,15 @@ public class Chatroom implements Runnable {
                     }
                 }
                 try {
-                    stream.writeUTF(message);
+                    stream.writeUTF(command);
                     stream.flush();
                     return;
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-                }
+            }
         }
-
-        for (String nameStream : outputStreams.keySet()) {
-            try {
-                if(messageParts[0].equals(nameStream)) {
-                    continue;
-                }
-                DataOutputStream stream = outputStreams.get(nameStream);
-                stream.writeUTF(message);
-                stream.flush();  
-            } catch (IOException e) {
-                e.printStackTrace();
-            }  
-        }
+        broadcastMessage(command, messageParts[0]);
     }
 
     @Override
@@ -157,10 +160,10 @@ public class Chatroom implements Runnable {
         while(true) {
             if (!updateActiveClientList()) break;
 
-            String message = commandsQueue.poll(); //queue can have commands or messages to send
-            if(message == null) continue;
+            String command = commandsQueue.poll(); //queue can have commands or messages to send
+            if(command == null) continue;
  
-            processCommand(message);
+            processCommand(command);
         }
         
     }
