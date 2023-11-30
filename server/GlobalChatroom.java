@@ -34,9 +34,9 @@ public class GlobalChatroom extends Chatroom { //global chatroom allows for the 
                     return;
                 case "/leave": //todo leave chatroom
                     return;
-                case "/createChatroom":
+                case "/createchatroom":
                     return;
-                case "/joinChatroom":
+                case "/joinchatroom":
                     return;
                 default:
                     DataOutputStream stream = outputStreams.get(splitCommand[0]);
