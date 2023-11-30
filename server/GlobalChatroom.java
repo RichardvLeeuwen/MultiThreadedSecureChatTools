@@ -5,19 +5,66 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import helper.*;
-import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class GlobalChatroom extends Chatroom { //global chatroom allows for the creation of new chatrooms and joining chatrooms. 
 
     private HashMap<String, Thread> chatroomThreads;
+    private HashMap<String, List<Client>> chatroomClientLists;
 
     GlobalChatroom(String name, List<Client> allClients) {
         super(name, allClients);
         this.chatroomThreads = new HashMap<String, Thread>();
+        this.chatroomClientLists = new HashMap<String, List<Client>>();
     }
 
     private void updateActiveChatroomsList() { //todo update active chatroom list
 
+    }
+
+    private Client returnClientFromName(String name) {
+        synchronized(allClients) {
+            for(Client client : allClients) {
+                if(name.equals(client.getName())) {
+                    return client;
+                }
+            }
+        }
+        return null;
+    }
+
+    private void executeCreateChatroomCommand(String[] commandParts, String senderName) {
+        if(commandParts.length < 3) {
+            DataOutputStream stream = outputStreams.get(senderName);
+            try {
+                stream.writeUTF("Please specify chatroom name");
+                stream.flush();
+                return;
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        String chatroomName = commandParts[2];
+        List<Client> chatroomClients =  new ArrayList<Client> (); //create the chatroom
+        chatroomClientLists.put(chatroomName, chatroomClients);
+        Thread globalChatroomThread = new Thread(new Chatroom(chatroomName, chatroomClients));
+        globalChatroomThread.start();
+
+        chatroomThreads.put(chatroomName, globalChatroomThread); //find the asking client and move it to the new chatroom
+        Client movingClient = returnClientFromName(senderName);
+        if(movingClient  == null) {
+            System.out.println("Client " + senderName+ " does not exist");
+            return;
+        }
+        broadcastMessage(senderName +" has left chatroom " + this.name, senderName);
+        Thread oldThread = clientThreads.get(senderName); //remove client old list
+        oldThread.stop(); //deprecated, need to find saver way
+        clientThreads.remove(senderName);
+        outputStreams.remove(senderName);
+        allClients.remove(movingClient);
+        synchronized(chatroomClients) {
+            chatroomClients.add(movingClient);
+        }
+        
     }
 
     @Override
@@ -30,11 +77,12 @@ public class GlobalChatroom extends Chatroom { //global chatroom allows for the 
                     executeUsersCommand(splitCommand[0]);
                     return;
                 case "/whisper":
-                    executeWhisperCommand(commandParts, splitCommand[0], commandParts[2], command);
+                    executeWhisperCommand(commandParts, splitCommand[0],  command);
                     return;
                 case "/leave": //todo leave chatroom
                     return;
                 case "/createchatroom":
+                    executeCreateChatroomCommand(commandParts, splitCommand[0]);
                     return;
                 case "/joinchatroom":
                     return;

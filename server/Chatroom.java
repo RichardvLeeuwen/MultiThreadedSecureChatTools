@@ -109,8 +109,8 @@ public class Chatroom implements Runnable {
         }
     }
     
-    protected void executeWhisperCommand(String[] commandParts, String senderName, String targetName, String whisperMessage) {
-        if(commandParts.length < 3) {
+    protected void executeWhisperCommand(String[] commandParts, String senderName,  String whisperMessage) {
+        if(commandParts.length < 3 ) {
             DataOutputStream stream = outputStreams.get(senderName);
             try {
                 stream.writeUTF("Please specify whisper target");
@@ -120,6 +120,7 @@ public class Chatroom implements Runnable {
                 e.printStackTrace();
             }
         }
+        String targetName = commandParts[2];
         DataOutputStream stream = outputStreams.get(targetName);
         if(stream == null) {
             stream = outputStreams.get(senderName);
@@ -149,7 +150,7 @@ public class Chatroom implements Runnable {
                     executeUsersCommand(splitCommand[0]);
                     return;
                 case "/whisper":
-                    executeWhisperCommand(commandParts, splitCommand[0], commandParts[2], command);
+                    executeWhisperCommand(commandParts, splitCommand[0], command);
                     return;
                 case "/leave": //todo leave chatroom
                     return;
