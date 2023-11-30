@@ -9,11 +9,11 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class Chatroom implements Runnable {
    
-    private String name;
-    private List<Client> allClients;
-    private ConcurrentLinkedQueue<String> commandsQueue;
-    private HashMap<String, DataOutputStream> outputStreams;
-    private HashMap<String, Thread> clientThreads;
+    protected String name;
+    protected List<Client> allClients;
+    protected ConcurrentLinkedQueue<String> commandsQueue;
+    protected HashMap<String, DataOutputStream> outputStreams;
+    protected HashMap<String, Thread> clientThreads;
 
     Chatroom(String name, List<Client> allClients) {
         this.name = name;
@@ -28,7 +28,7 @@ public class Chatroom implements Runnable {
         return allUserNames;
     }
 
-    private boolean updateActiveClientList() { //returns false if client list empty, true if not
+    protected boolean updateActiveClientList() { //returns false if client list empty, true if not
         synchronized(allClients) { //expensive potentially, will look into alternatives
             List<String> toBeRemovedName = new ArrayList<String>();
             List<Client> toBeRemovedClient = new ArrayList<Client>(); //painfully awkward
@@ -82,7 +82,7 @@ public class Chatroom implements Runnable {
         return true;
     }
 
-    private void broadcastMessage(String message, String messageOwner) { //broadcast except to message owner
+    protected void broadcastMessage(String message, String messageOwner) { //broadcast except to message owner
         for (String nameStream : outputStreams.keySet()) {
             try {
                 if(messageOwner.equals(nameStream)) {
@@ -97,52 +97,74 @@ public class Chatroom implements Runnable {
         }
     }
 
-    private void processCommand(String command) {
-        String[] messageParts = command.split(":",2);
-        if(messageParts[1].startsWith(" /")) { 
-            String[] commandString = messageParts[1].split(" ", 4); //best stripped but works fine for now
-            if(commandString[1].equals("/users")) { //considering a switch with functions for later
-                DataOutputStream stream = outputStreams.get(messageParts[0]);
-                try {
-                    stream.writeUTF(getUserNames());
-                    stream.flush();
-                    return;
-                } catch (IOException e) {
-                    e.printStackTrace();
-                } 
-            }
-            if(commandString[1].equals("/whisper")) { //TODO: clean up error checking and modulise into functions
-                if(commandString.length < 3) {
-                    DataOutputStream stream = outputStreams.get(messageParts[0]);
-                    try {
-                        stream.writeUTF("Please specify whisper target");
-                        stream.flush();
-                        return;
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }
-                DataOutputStream stream = outputStreams.get(commandString[2]);
-                if(stream == null) {
-                    stream = outputStreams.get(messageParts[0]);
-                    try {
-                        stream.writeUTF("Invalid target");
-                        stream.flush();
-                        return;
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }
-                try {
-                    stream.writeUTF(command);
-                    stream.flush();
-                    return;
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+    protected void executeUsersCommand(String senderName) { //send sender a list of all active usernames
+        DataOutputStream stream = outputStreams.get(senderName);
+        try {
+            stream.writeUTF(getUserNames());
+            stream.flush();
+            return;
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+    
+    protected void executeWhisperCommand(String[] commandParts, String senderName, String targetName, String whisperMessage) {
+        if(commandParts.length < 3) {
+            DataOutputStream stream = outputStreams.get(senderName);
+            try {
+                stream.writeUTF("Please specify whisper target");
+                stream.flush();
+                return;
+            } catch (IOException e) {
+                e.printStackTrace();
             }
         }
-        broadcastMessage(command, messageParts[0]);
+        DataOutputStream stream = outputStreams.get(targetName);
+        if(stream == null) {
+            stream = outputStreams.get(senderName);
+            try {
+                stream.writeUTF("Invalid target");
+                stream.flush();
+                return;
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        try {
+            stream.writeUTF(whisperMessage);
+            stream.flush();
+            return;
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    protected void processCommand(String command) {
+        String[] splitCommand = command.split(":",2);
+        if(splitCommand[1].startsWith(" /")) { 
+            String[] commandParts = splitCommand[1].split(" ", 4); //best stripped but works fine for now
+            switch(commandParts[1]) {
+                case "/users":
+                    executeUsersCommand(splitCommand[0]);
+                    return;
+                case "/whisper":
+                    executeWhisperCommand(commandParts, splitCommand[0], commandParts[2], command);
+                    return;
+                default:
+                    DataOutputStream stream = outputStreams.get(splitCommand[0]);
+                    try {
+                        stream.writeUTF("Invalid command");
+                        stream.flush();
+                        return;
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                        return;
+                    }
+            }
+        }
+        else {
+            broadcastMessage(command, splitCommand[0]);
+        }
     }
 
     @Override
