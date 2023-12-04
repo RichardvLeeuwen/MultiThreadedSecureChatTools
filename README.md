@@ -8,4 +8,5 @@ Currently, on the serverside, each client has its own separate thread for receiv
 /users: retrieves the names of all users currently in the chatroom\
 /whisper [target] [message]: sends a personal message to target only the target is able to read. Target must be in the same chatroom.\
 /cheatechatroom [chatroomname]: creates a new chatroom that the user automatically joins. New chatrooms can only be created from the global chatroom.\
-/chatrooms: retrieves the names of all chatrooms currently active
+/chatrooms: retrieves the names of all chatrooms currently active, only works in global\
+/leave: leaves the chatroom and returns to the global chatroom. If already in global, exists application.
