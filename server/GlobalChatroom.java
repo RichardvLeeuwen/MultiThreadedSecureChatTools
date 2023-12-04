@@ -51,7 +51,7 @@ public class GlobalChatroom extends Chatroom { //global chatroom allows for the 
         String chatroomName = commandParts[2];
         List<Client> chatroomClients =  new ArrayList<Client> (); //create the chatroom
         chatroomClientLists.put(chatroomName, chatroomClients);
-        Thread globalChatroomThread = new Thread(new Chatroom(chatroomName, chatroomClients));
+        Thread globalChatroomThread = new Thread(new Chatroom(chatroomName, chatroomClients, allClients));
         globalChatroomThread.start();
 
         chatroomThreads.put(chatroomName, globalChatroomThread); //find the asking client and move it to the new chatroom
@@ -65,7 +65,9 @@ public class GlobalChatroom extends Chatroom { //global chatroom allows for the 
         oldThread.stop(); //deprecated, need to find saver way
         clientThreads.remove(senderName);
         outputStreams.remove(senderName);
-        allClients.remove(movingClient);
+        synchronized(allClients) {
+            allClients.remove(movingClient);
+        }
         synchronized(chatroomClients) {
             chatroomClients.add(movingClient);
         }
@@ -87,7 +89,8 @@ public class GlobalChatroom extends Chatroom { //global chatroom allows for the 
                 case "/whisper":
                     executeWhisperCommand(commandParts, splitCommand[0],  command);
                     return;
-                case "/leave": //todo leave chatroom
+                case "/leave":
+                    executeLeaveCommand(splitCommand[0]);
                     return;
                 case "/createchatroom":
                     executeCreateChatroomCommand(commandParts, splitCommand[0]);

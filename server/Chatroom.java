@@ -14,6 +14,7 @@ public class Chatroom implements Runnable {
     protected ConcurrentLinkedQueue<String> commandsQueue;
     protected HashMap<String, DataOutputStream> outputStreams;
     protected HashMap<String, Thread> clientThreads;
+    protected List<Client> parentClients; //placeholder name, allows a child chatroom to return clients to parents chatroom
 
     Chatroom(String name, List<Client> allClients) {
         this.name = name;
@@ -21,6 +22,16 @@ public class Chatroom implements Runnable {
         this.commandsQueue = new ConcurrentLinkedQueue<String>();
         this.outputStreams = new HashMap<String, DataOutputStream>();
         this.clientThreads = new HashMap<String, Thread>();
+        this.parentClients = null;
+    }
+
+    Chatroom(String name, List<Client> allClients, List<Client> parentClients) {
+        this.name = name;
+        this.allClients = allClients;
+        this.commandsQueue = new ConcurrentLinkedQueue<String>();
+        this.outputStreams = new HashMap<String, DataOutputStream>();
+        this.clientThreads = new HashMap<String, Thread>();
+        this.parentClients = parentClients;
     }
 
     public String getUserNames() {
@@ -152,6 +163,28 @@ public class Chatroom implements Runnable {
         }
     }
 
+    protected void executeLeaveCommand(String userName) {
+        Client toBeRemovedClient = returnClientFromName(userName);
+        if(toBeRemovedClient  == null) {
+            System.out.println("Client " + userName + " does not exist");
+            return;
+        }
+ 
+        Thread oldThread = clientThreads.get(userName); //remove client old list
+        oldThread.stop(); //deprecated, need to find saver way
+        clientThreads.remove(userName);
+        outputStreams.remove(userName);
+        synchronized(allClients) {
+            allClients.remove(toBeRemovedClient);
+        }
+        if(parentClients == null) return;
+        synchronized(parentClients) { //return to parent chatroom
+            parentClients.add(toBeRemovedClient);
+        }
+
+    }
+    
+    
     protected void processCommand(String command) {
         String[] splitCommand = command.split(":",2);
         if(splitCommand[1].startsWith(" /")) { 
@@ -163,7 +196,8 @@ public class Chatroom implements Runnable {
                 case "/whisper":
                     executeWhisperCommand(commandParts, splitCommand[0], command);
                     return;
-                case "/leave": //todo leave chatroom
+                case "/leave":
+                    executeLeaveCommand(splitCommand[0]);
                     return;
                 default:
                     DataOutputStream stream = outputStreams.get(splitCommand[0]);
