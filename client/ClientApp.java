@@ -25,11 +25,13 @@ public class ClientApp {
 
         while(true) {
             String input = consoleInputScanner.nextLine();
-            if(input.equals("/exit")) {
-                break;
-            }
+            
             clientOutputStream.writeUTF(input);
             clientOutputStream.flush();
+            if(input.equals("/leave")) {
+                newClientThread.stop();
+                break;
+            }
         }
         consoleInputScanner.close(); 
         clientOutputStream.flush();

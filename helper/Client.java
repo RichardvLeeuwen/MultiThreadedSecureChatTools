@@ -46,7 +46,7 @@ public class Client implements Runnable {
             try {
                 clientMessage = (String)inputStream.readUTF();
             } catch (IOException e) {
-                e.printStackTrace();
+                //e.printStackTrace(); consider logging and catching different exceptions, maybe own class?
                 break;
             }
             if(clientMessage != null) {
