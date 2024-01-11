@@ -16,7 +16,7 @@ public class ServerApp {
         
 
         List<Client> newClients =  new ArrayList<Client> ();
-        Thread globalChatroomThread = new Thread(new Chatroom("Global", newClients));
+        Thread globalChatroomThread = new Thread(new GlobalChatroom("Global", newClients));
         globalChatroomThread.start();
 
 
