@@ -1,6 +1,6 @@
 package client;
 
-import java.io.*;  
+import java.io.*;
 import java.net.*;
 import java.util.Scanner;
 
@@ -15,7 +15,6 @@ public class ClientApp {
         InetAddress serverInetAddress = InetAddress.getByName(SERVERADDRESS);
         Socket clientSocket = new Socket(serverInetAddress, SERVERPORT);
 
-    
         Client client = new Client("Rich", clientSocket);
         Thread newClientThread = new Thread(client);
         newClientThread.start();
@@ -23,17 +22,17 @@ public class ClientApp {
         DataOutputStream clientOutputStream = new DataOutputStream(clientSocket.getOutputStream());
         Scanner consoleInputScanner = new Scanner(System.in);
 
-        while(true) {
+        while (true) {
             String input = consoleInputScanner.nextLine();
-            
+
             clientOutputStream.writeUTF(input);
             clientOutputStream.flush();
-            if(input.equals("/leave")) {
-                newClientThread.stop();
+            if (input.equals("/exit")) {
+                newClientThread.interrupt();
                 break;
             }
         }
-        consoleInputScanner.close(); 
+        consoleInputScanner.close();
         clientOutputStream.flush();
         clientOutputStream.close();
         clientSocket.close();
