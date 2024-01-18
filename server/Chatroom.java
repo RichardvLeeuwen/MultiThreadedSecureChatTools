@@ -14,7 +14,7 @@ public class Chatroom implements Runnable {
     protected ConcurrentLinkedQueue<String> commandsQueue;
     protected HashMap<String, DataOutputStream> outputStreams;
     protected HashMap<String, Thread> userThreads;
-    protected List<Client> parentClients; // placeholder name, allows a child chatroom to return clients to parents
+    protected List<Client> parentClients; // allows a child chatroom to return clients to parent
                                           // chatroom
 
     Chatroom(String name, List<Client> allClients) {
@@ -35,10 +35,22 @@ public class Chatroom implements Runnable {
         this.parentClients = parentClients;
     }
 
-    public String getUserNames() { // strange bug where in new chatrooms it sometimes does not return userlist,
-                                   // hard to reproduce
+    public String getUserNames() {
         String allUserNames = String.join(", ", userThreads.keySet());
         return allUserNames;
+    }
+
+    protected void addInitialisedClient(String clientName, Client client, DataOutputStream clientOutputStream, Thread clientThread) {
+        synchronized(this.outputStreams) {
+            if(this.outputStreams.containsKey(clientName)) return;
+            this.outputStreams.put(clientName, clientOutputStream);
+        }
+        synchronized(this.userThreads) {
+            this.userThreads.put(clientName, clientThread);
+        }
+        synchronized(this.allClients) {
+            this.allClients.add(client);
+        }
     }
 
     protected Client returnClientFromName(String name) {
@@ -81,7 +93,7 @@ public class Chatroom implements Runnable {
                     return false;
                 }
             }
-            for (Client client : allClients) { // check for new clients, if so add output streams and initialize client
+            for (Client client : allClients) { // check for new uninitialised clients without output stream/client receive thread, if so add output streams and initialize client
                                                // thread
                 if (!outputStreams.containsKey(client.getName())) {
                     try {
@@ -167,7 +179,7 @@ public class Chatroom implements Runnable {
         }
     }
 
-    protected void executeLeaveCommand(String userName) {
+    protected void executeLeaveCommand(String userName) { //TODO: rewrite whole function as add and removing client mechanism is different
         Client toBeRemovedClient = returnClientFromName(userName);
         if (toBeRemovedClient == null) {
             System.out.println("Client " + userName + " does not exist");
@@ -175,13 +187,13 @@ public class Chatroom implements Runnable {
         }
 
         broadcastMessage(userName + " has left chatroom " + this.name, userName);
-        Thread oldThread = userThreads.get(userName); // remove client old list
-        oldThread.interrupt();
+
         userThreads.remove(userName);
         outputStreams.remove(userName);
         synchronized (allClients) {
             allClients.remove(toBeRemovedClient);
         }
+
         if (parentClients == null)
             return;
         synchronized (parentClients) { // return to parent chatroom

@@ -63,7 +63,8 @@ public class GlobalChatroom extends Chatroom { // global chatroom allows for the
         String chatroomName = commandParts[2];
         List<Client> chatroomClients = new ArrayList<Client>(); // create the chatroom
         chatroomClientLists.put(chatroomName, chatroomClients);
-        Thread newChatroomThread = new Thread(new Chatroom(chatroomName, chatroomClients, allClients));
+        Chatroom newChatroom = new Chatroom(chatroomName, chatroomClients, allClients); //put this in its own hashmap for later use
+        Thread newChatroomThread = new Thread(newChatroom);
         newChatroomThread.start();
 
         chatroomThreads.put(chatroomName, newChatroomThread);
@@ -76,17 +77,14 @@ public class GlobalChatroom extends Chatroom { // global chatroom allows for the
             return;
         }
         broadcastMessage(senderName + " has left chatroom " + this.name, senderName);
-        Thread oldThread = userThreads.get(senderName); // remove client old list
-        oldThread.interrupt(); 
+
+        movingClient.setSendQueue(newChatroom.commandsQueue);
+        newChatroom.addInitialisedClient(senderName, movingClient ,outputStreams.get(senderName), userThreads.get(senderName));
         userThreads.remove(senderName);
         outputStreams.remove(senderName);
         synchronized (allClients) {
             allClients.remove(movingClient);
         }
-        synchronized (chatroomClients) {
-            chatroomClients.add(movingClient);
-        }
-
     }
 
     @Override
