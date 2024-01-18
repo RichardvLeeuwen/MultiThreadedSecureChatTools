@@ -12,7 +12,8 @@ Currently, on the serverside, each client has its own separate thread for receiv
 /leave: leaves the chatroom and returns to the global chatroom. If already in global, exists application.
 
 ## Current Bugs and ToDos
-- Fix hard to reproduce multithreading issues where some commands or threads become unresponsive e.g. leave not working or /users not responding
+- Fix hard to reproduce multithreading issues where some commands or threads become unresponsive e.g. leave not working or /users not responding.
+Issue been narrowed down to the readUTF() function hanging in client.java.
 - Implement join command
 - Implement SSL sockets with self-signed certificates (CA unnecessary for a personal project not publically available, but in case you want to use my code, definitely get a properly authorised certificate)
 - Implement SQL database for to store user accounts, chatmessages and other logging

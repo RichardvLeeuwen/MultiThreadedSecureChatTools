@@ -205,12 +205,15 @@ public class Chatroom implements Runnable {
                     executeLeaveCommand(splitCommand[0]);
                     return;
                 default:
+                    System.out.println("unknown command");
                     DataOutputStream stream = outputStreams.get(splitCommand[0]);
                     try {
                         stream.writeUTF("Invalid command");
                         stream.flush();
+                        System.out.println("Do I get here?");
                         return;
                     } catch (IOException e) {
+                        System.out.println("or here?");
                         e.printStackTrace();
                         return;
                     }
@@ -236,8 +239,14 @@ public class Chatroom implements Runnable {
         while (true) {
             if (!updateActiveClientList())
                 break;
-
-            String command = commandsQueue.poll(); // queue can have commands or messages to send
+            String command = null;
+            try {
+                command = commandsQueue.poll(); // queue can have commands or messages to send
+            } catch (Exception e) {
+                e.printStackTrace();
+                // TODO: handle exception
+            }
+            
             if (command == null)
                 continue;
 

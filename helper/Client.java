@@ -46,7 +46,9 @@ public class Client implements Runnable {
 
             String clientMessage = null;
             try {
+                System.out.println("before");
                 clientMessage = (String) inputStream.readUTF();
+                System.out.println("after");
             } catch (IOException e) {
                 e.printStackTrace(); // consider logging and catching different exceptions, maybe own class?
                 break;
@@ -57,7 +59,13 @@ public class Client implements Runnable {
                     System.out.println(clientMessage);
                     continue;
                 }
-                sendQueue.offer(nameAppendedMessage);
+                try {
+                    sendQueue.offer(nameAppendedMessage);
+                } catch (Exception e) {
+                    e.printStackTrace(); 
+                    // TODO: handle exception
+                }
+                
             }
         }
     }

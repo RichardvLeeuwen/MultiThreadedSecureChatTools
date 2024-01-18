@@ -77,7 +77,7 @@ public class GlobalChatroom extends Chatroom { // global chatroom allows for the
         }
         broadcastMessage(senderName + " has left chatroom " + this.name, senderName);
         Thread oldThread = userThreads.get(senderName); // remove client old list
-        oldThread.interrupt(); // deprecated, need to find saver way
+        oldThread.interrupt(); 
         userThreads.remove(senderName);
         outputStreams.remove(senderName);
         synchronized (allClients) {
