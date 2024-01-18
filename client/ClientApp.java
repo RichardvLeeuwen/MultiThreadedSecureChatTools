@@ -33,8 +33,7 @@ public class ClientApp {
             }
         }
         consoleInputScanner.close();
-        clientOutputStream.flush();
-        clientOutputStream.close();
+        //clientOutputStream.close(); unnecessary?
         clientSocket.close();
     }
 }
