@@ -36,21 +36,11 @@ public class Chatroom implements Runnable {
     }
 
     public String getUserNames() {
-        String allUserNames = String.join(", ", userThreads.keySet());
+        String allUserNames;
+        synchronized(userThreads) {
+            allUserNames = String.join(", ", userThreads.keySet());
+        }
         return allUserNames;
-    }
-
-    protected void addInitialisedClient(String clientName, Client client, DataOutputStream clientOutputStream, Thread clientThread) {
-        synchronized(this.outputStreams) {
-            if(this.outputStreams.containsKey(clientName)) return;
-            this.outputStreams.put(clientName, clientOutputStream);
-        }
-        synchronized(this.userThreads) {
-            this.userThreads.put(clientName, clientThread);
-        }
-        synchronized(this.allClients) {
-            this.allClients.add(client);
-        }
     }
 
     protected Client returnClientFromName(String name) {
@@ -68,13 +58,15 @@ public class Chatroom implements Runnable {
         synchronized (allClients) { // expensive potentially, will look into alternatives
             List<String> toBeRemovedNames = new ArrayList<String>();
             List<Client> toBeRemovedClient = new ArrayList<Client>(); // painfully awkward
-            for (String name : userThreads.keySet()) {
-                Thread thread = userThreads.get(name);
-                if (!thread.isAlive()) {
-                    toBeRemovedNames.add(name);
-                    for (Client client : allClients) {
-                        if (client.getName() == name) {
-                            toBeRemovedClient.add(client);
+            synchronized(userThreads) {
+                for (String name : userThreads.keySet()) {
+                    Thread thread = userThreads.get(name);
+                    if (!thread.isAlive()) {
+                        toBeRemovedNames.add(name);
+                        for (Client client : allClients) {
+                            if (client.getName() == name) {
+                                toBeRemovedClient.add(client);
+                            }
                         }
                     }
                 }
@@ -134,6 +126,20 @@ public class Chatroom implements Runnable {
                 e.printStackTrace();
             }
         }
+    }
+
+    protected void addInitialisedClient(String clientName, Client client, DataOutputStream clientOutputStream, Thread clientThread) {
+        synchronized(this.outputStreams) {
+            if(this.outputStreams.containsKey(clientName)) return;
+            this.outputStreams.put(clientName, clientOutputStream);
+        }
+        synchronized(this.userThreads) {
+            this.userThreads.put(clientName, clientThread);
+        }
+        synchronized(this.allClients) {
+            this.allClients.add(client);
+        }
+        broadcastMessage(clientName+" has entered chatroom "+this.name, "");
     }
 
     protected void executeUsersCommand(String senderName) { // send sender a list of all active usernames
@@ -217,15 +223,12 @@ public class Chatroom implements Runnable {
                     executeLeaveCommand(splitCommand[0]);
                     return;
                 default:
-                    System.out.println("unknown command");
                     DataOutputStream stream = outputStreams.get(splitCommand[0]);
                     try {
                         stream.writeUTF("Invalid command");
                         stream.flush();
-                        System.out.println("Do I get here?");
                         return;
                     } catch (IOException e) {
-                        System.out.println("or here?");
                         e.printStackTrace();
                         return;
                     }
