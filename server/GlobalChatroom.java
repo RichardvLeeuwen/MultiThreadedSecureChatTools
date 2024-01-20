@@ -149,10 +149,10 @@ public class GlobalChatroom extends Chatroom { // global chatroom allows for the
                 case "/whisper":
                     executeWhisperCommand(commandParts, splitCommand[0], command);
                     return;
-                case "/createchatroom":
+                case "/create":
                     executeCreateChatroomCommand(commandParts, splitCommand[0]);
                     return;
-                case "/joinchatroom":
+                case "/join":
                     executeJoinChatroomCommand(commandParts, splitCommand[0]);
                     return;
                 default:

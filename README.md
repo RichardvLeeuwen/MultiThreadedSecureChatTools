@@ -7,9 +7,11 @@ Currently, on the serverside, each client has its own separate thread for receiv
 ## Currently accepted commands
 /users: retrieves the names of all users currently in the chatroom\
 /whisper [target] [message]: sends a personal message to target only the target is able to read. Target must be in the same chatroom.\
-/createchatroom [chatroomname]: creates a new chatroom that the user automatically joins. New chatrooms can only be created from the global chatroom.\
+/create [chatroomname]: creates a new chatroom that the user automatically joins. New chatrooms can only be created from the global chatroom.\
+/join [chatroomname]: join an existing chatroom. Joining chatrooms can only be created from the global chatroom.\
 /chatrooms: retrieves the names of all chatrooms currently active, only works in global\
-/leave: leaves the chatroom and returns to the global chatroom. If already in global, exists application.
+/leave: leaves the chatroom and returns to the global chatroom.
+/exit: exists the client application.
 
 ## Current Bugs and ToDos
 - Check for concurrency issues
