@@ -76,7 +76,7 @@ public class GlobalChatroom extends Chatroom { // global chatroom allows for the
 
         List<Client> chatroomClients = new ArrayList<Client>(); // create the chatroom
         childChatroomClientLists.put(chatroomName, chatroomClients);
-        Chatroom newChatroom = new Chatroom(chatroomName, chatroomClients, allClients); //put this in its own hashmap for later use
+        Chatroom newChatroom = new Chatroom(chatroomName, chatroomClients, this); //put this in its own hashmap for later use
         this.childChatrooms.put(chatroomName, newChatroom);
         Thread newChatroomThread = new Thread(newChatroom);
         newChatroomThread.start();

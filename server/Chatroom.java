@@ -14,7 +14,7 @@ public class Chatroom implements Runnable {
     protected ConcurrentLinkedQueue<String> commandsQueue;
     protected HashMap<String, DataOutputStream> outputStreams;
     protected HashMap<String, Thread> userThreads;
-    protected List<Client> parentClients; // allows a child chatroom to return clients to parent
+    protected GlobalChatroom parentChatroom; // allows a child chatroom to return clients to parent
                                           // chatroom
 
     Chatroom(String name, List<Client> allClients) {
@@ -23,16 +23,16 @@ public class Chatroom implements Runnable {
         this.commandsQueue = new ConcurrentLinkedQueue<String>();
         this.outputStreams = new HashMap<String, DataOutputStream>();
         this.userThreads = new HashMap<String, Thread>();
-        this.parentClients = null;
+        this.parentChatroom = null;
     }
 
-    Chatroom(String name, List<Client> allClients, List<Client> parentClients) {
+    Chatroom(String name, List<Client> allClients, GlobalChatroom parentChatroom) {
         this.name = name;
         this.allClients = allClients;
         this.commandsQueue = new ConcurrentLinkedQueue<String>();
         this.outputStreams = new HashMap<String, DataOutputStream>();
         this.userThreads = new HashMap<String, Thread>();
-        this.parentClients = parentClients;
+        this.parentChatroom = parentChatroom;
     }
 
     public String getUserNames() {
@@ -192,19 +192,26 @@ public class Chatroom implements Runnable {
             return;
         }
 
-        broadcastMessage(userName + " has left chatroom " + this.name, userName);
+        broadcastMessage(userName + " has left chatroom " + this.name, "");
 
-        userThreads.remove(userName);
-        outputStreams.remove(userName);
+        if (parentChatroom != null){
+            toBeRemovedClient.setSendQueue(parentChatroom.commandsQueue);
+            parentChatroom.addInitialisedClient(userName, toBeRemovedClient, outputStreams.get(userName), userThreads.get(userName) );
+        }
+
+        synchronized(userThreads) {
+            userThreads.remove(userName);
+        }
+        synchronized(outputStreams) {
+            outputStreams.remove(userName);
+        }
         synchronized (allClients) {
             allClients.remove(toBeRemovedClient);
         }
 
-        if (parentClients == null)
-            return;
-        synchronized (parentClients) { // return to parent chatroom
-            parentClients.add(toBeRemovedClient);
-        }
+
+        
+
 
     }
 
