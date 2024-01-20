@@ -14,7 +14,7 @@ public class Chatroom implements Runnable {
     protected ConcurrentLinkedQueue<String> commandsQueue;
     protected HashMap<String, DataOutputStream> outputStreams;
     protected HashMap<String, Thread> userThreads;
-    protected List<Client> parentClients; // allows a child chatroom to return clients to parent
+    protected GlobalChatroom parentChatroom; // allows a child chatroom to return clients to parent
                                           // chatroom
 
     Chatroom(String name, List<Client> allClients) {
@@ -23,34 +23,24 @@ public class Chatroom implements Runnable {
         this.commandsQueue = new ConcurrentLinkedQueue<String>();
         this.outputStreams = new HashMap<String, DataOutputStream>();
         this.userThreads = new HashMap<String, Thread>();
-        this.parentClients = null;
+        this.parentChatroom = null;
     }
 
-    Chatroom(String name, List<Client> allClients, List<Client> parentClients) {
+    Chatroom(String name, List<Client> allClients, GlobalChatroom parentChatroom) {
         this.name = name;
         this.allClients = allClients;
         this.commandsQueue = new ConcurrentLinkedQueue<String>();
         this.outputStreams = new HashMap<String, DataOutputStream>();
         this.userThreads = new HashMap<String, Thread>();
-        this.parentClients = parentClients;
+        this.parentChatroom = parentChatroom;
     }
 
     public String getUserNames() {
-        String allUserNames = String.join(", ", userThreads.keySet());
+        String allUserNames;
+        synchronized(userThreads) {
+            allUserNames = String.join(", ", userThreads.keySet());
+        }
         return allUserNames;
-    }
-
-    protected void addInitialisedClient(String clientName, Client client, DataOutputStream clientOutputStream, Thread clientThread) {
-        synchronized(this.outputStreams) {
-            if(this.outputStreams.containsKey(clientName)) return;
-            this.outputStreams.put(clientName, clientOutputStream);
-        }
-        synchronized(this.userThreads) {
-            this.userThreads.put(clientName, clientThread);
-        }
-        synchronized(this.allClients) {
-            this.allClients.add(client);
-        }
     }
 
     protected Client returnClientFromName(String name) {
@@ -68,13 +58,15 @@ public class Chatroom implements Runnable {
         synchronized (allClients) { // expensive potentially, will look into alternatives
             List<String> toBeRemovedNames = new ArrayList<String>();
             List<Client> toBeRemovedClient = new ArrayList<Client>(); // painfully awkward
-            for (String name : userThreads.keySet()) {
-                Thread thread = userThreads.get(name);
-                if (!thread.isAlive()) {
-                    toBeRemovedNames.add(name);
-                    for (Client client : allClients) {
-                        if (client.getName() == name) {
-                            toBeRemovedClient.add(client);
+            synchronized(userThreads) {
+                for (String name : userThreads.keySet()) {
+                    Thread thread = userThreads.get(name);
+                    if (!thread.isAlive()) {
+                        toBeRemovedNames.add(name);
+                        for (Client client : allClients) {
+                            if (client.getName() == name) {
+                                toBeRemovedClient.add(client);
+                            }
                         }
                     }
                 }
@@ -136,6 +128,20 @@ public class Chatroom implements Runnable {
         }
     }
 
+    protected void addInitialisedClient(String clientName, Client client, DataOutputStream clientOutputStream, Thread clientThread) {
+        synchronized(this.outputStreams) {
+            if(this.outputStreams.containsKey(clientName)) return;
+            this.outputStreams.put(clientName, clientOutputStream);
+        }
+        synchronized(this.userThreads) {
+            this.userThreads.put(clientName, clientThread);
+        }
+        synchronized(this.allClients) {
+            this.allClients.add(client);
+        }
+        broadcastMessage(clientName+" has entered chatroom "+this.name, "");
+    }
+
     protected void executeUsersCommand(String senderName) { // send sender a list of all active usernames
         DataOutputStream stream = outputStreams.get(senderName);
         try {
@@ -186,19 +192,26 @@ public class Chatroom implements Runnable {
             return;
         }
 
-        broadcastMessage(userName + " has left chatroom " + this.name, userName);
+        broadcastMessage(userName + " has left chatroom " + this.name, "");
 
-        userThreads.remove(userName);
-        outputStreams.remove(userName);
+        if (parentChatroom != null){
+            toBeRemovedClient.setSendQueue(parentChatroom.commandsQueue);
+            parentChatroom.addInitialisedClient(userName, toBeRemovedClient, outputStreams.get(userName), userThreads.get(userName) );
+        }
+
+        synchronized(userThreads) {
+            userThreads.remove(userName);
+        }
+        synchronized(outputStreams) {
+            outputStreams.remove(userName);
+        }
         synchronized (allClients) {
             allClients.remove(toBeRemovedClient);
         }
 
-        if (parentClients == null)
-            return;
-        synchronized (parentClients) { // return to parent chatroom
-            parentClients.add(toBeRemovedClient);
-        }
+
+        
+
 
     }
 
@@ -217,15 +230,12 @@ public class Chatroom implements Runnable {
                     executeLeaveCommand(splitCommand[0]);
                     return;
                 default:
-                    System.out.println("unknown command");
                     DataOutputStream stream = outputStreams.get(splitCommand[0]);
                     try {
                         stream.writeUTF("Invalid command");
                         stream.flush();
-                        System.out.println("Do I get here?");
                         return;
                     } catch (IOException e) {
-                        System.out.println("or here?");
                         e.printStackTrace();
                         return;
                     }
