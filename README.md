@@ -12,9 +12,7 @@ Currently, on the serverside, each client has its own separate thread for receiv
 /leave: leaves the chatroom and returns to the global chatroom. If already in global, exists application.
 
 ## Current Bugs and ToDos
-- Fix leave command after bug fixes
 - Check for concurrency issues
 - Write unit tests
 - Implement SSL sockets with self-signed certificates (CA unnecessary for a personal project not publically available, but in case you want to use my code, definitely get a properly authorised certificate)
 - Implement SQL database for to store user accounts, chatmessages and other logging
-- Change the synchronised client list to a threadsafe queue or similar data structures
