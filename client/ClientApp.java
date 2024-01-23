@@ -1,20 +1,23 @@
 package client;
 
 import java.io.*;
-import java.net.*;
 import java.util.Scanner;
+import javax.net.ssl.SSLSocket;
+
 
 import helper.*;
 
 public class ClientApp {
     private static final int SERVERPORT = 5000;
     private static final String SERVERADDRESS = "127.0.0.1";
+    private static final String CERTIFICATEPATH = "C:\\Users\\Richard\\Desktop\\MultiThreadedSecureChatTools\\client\\RichChatServerCertificate.cer";
 
     public static void main(String[] args) throws Exception {
-        System.out.println("Booting up client");
-        InetAddress serverInetAddress = InetAddress.getByName(SERVERADDRESS);
-        Socket clientSocket = new Socket(serverInetAddress, SERVERPORT);
 
+        System.out.println("Booting up client");
+        
+        SSLSocket clientSocket = TLSWrapper.returnTLSSocket(CERTIFICATEPATH, SERVERADDRESS, SERVERPORT); //new Socket(serverInetAddress, SERVERPORT);
+        if (clientSocket == null) return;
         Client client = new Client("Rich", clientSocket);
         Thread newClientThread = new Thread(client);
         newClientThread.start();

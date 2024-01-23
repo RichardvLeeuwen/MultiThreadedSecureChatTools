@@ -1,18 +1,19 @@
 package helper;
 
 import java.io.*;
-import java.net.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
+
+import javax.net.ssl.SSLSocket;
 
 public class Client implements Runnable {
 
     private String name;
-    private Socket socket;
+    private SSLSocket socket;
     private ConcurrentLinkedQueue<String> sendQueue;
     private DataInputStream inputStream;
     private Boolean printOut; // by default outputs to command line
 
-    public Client(String name, Socket socket) {
+    public Client(String name, SSLSocket socket) {
         this.name = name;
         this.socket = socket;
         this.printOut = true;
@@ -27,7 +28,7 @@ public class Client implements Runnable {
         return this.name;
     }
 
-    public Socket getSocket() {
+    public SSLSocket getSocket() {
         return this.socket;
     }
 

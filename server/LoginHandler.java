@@ -1,17 +1,18 @@
 package server;
 
 import java.io.*;
-import java.net.Socket;
 import java.util.List;
 import helper.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import javax.net.ssl.SSLSocket;
+
 public class LoginHandler implements Runnable {
    
     private List<Client> allClients;
-    private ConcurrentLinkedQueue<Socket> loginQueue;
+    private ConcurrentLinkedQueue<SSLSocket> loginQueue;
 
-    LoginHandler( ConcurrentLinkedQueue<Socket> loginQueue, List<Client> allClients) {
+    LoginHandler( ConcurrentLinkedQueue<SSLSocket> loginQueue, List<Client> allClients) {
         this.loginQueue = loginQueue;
         this.allClients = allClients;
     }
@@ -20,7 +21,7 @@ public class LoginHandler implements Runnable {
     public void run() { //could change use of sockets into socket channels but SSL engine with socket channels sucks
         System.out.println("Booting up login thread");
         while(true) {
-            Socket newClientSocket = loginQueue.poll();
+            SSLSocket newClientSocket = loginQueue.poll();
             if(newClientSocket == null) {
                 continue;
             }
