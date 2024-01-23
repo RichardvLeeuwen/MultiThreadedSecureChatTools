@@ -1,6 +1,6 @@
 bin/
 .vscode/
 chat-server-root-authority
-RichChatServerCertificate
-RichChatServerKeyStore
+RichChatServerCertificate.cer
+RichChatServerKeyStore.jks
 .gitignore
