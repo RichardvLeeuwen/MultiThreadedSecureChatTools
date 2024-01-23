@@ -11,6 +11,9 @@ public class ClientApp {
     private static final String SERVERADDRESS = "127.0.0.1";
 
     public static void main(String[] args) throws Exception {
+
+
+        
         System.out.println("Booting up client");
         InetAddress serverInetAddress = InetAddress.getByName(SERVERADDRESS);
         Socket clientSocket = new Socket(serverInetAddress, SERVERPORT);

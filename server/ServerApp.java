@@ -10,6 +10,9 @@ public class ServerApp {
     private static final int PORT = 5000;
    
     public static void main(String[] args) throws Exception {
+
+        
+
         System.out.println("Booting up server");
         ServerSocket serverSocket = new ServerSocket(PORT);
 
