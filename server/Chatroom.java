@@ -57,8 +57,8 @@ public class Chatroom implements Runnable {
     protected boolean updateActiveClientList() { // returns false if client list empty, true if not
         synchronized (allClients) { // expensive potentially, will look into alternatives
             List<String> toBeRemovedNames = new ArrayList<String>();
-            List<Client> toBeRemovedClient = new ArrayList<Client>(); // painfully awkward
-            synchronized(userThreads) {
+            List<Client> toBeRemovedClient = new ArrayList<Client>();
+            synchronized(userThreads) { //TODO: Fix this locking mess after recent changes
                 for (String name : userThreads.keySet()) {
                     Thread thread = userThreads.get(name);
                     if (!thread.isAlive()) {
@@ -79,7 +79,7 @@ public class Chatroom implements Runnable {
             for (Client client : toBeRemovedClient) {
                 allClients.remove(client);
             }
-            if (allClients.isEmpty()) { // close chatroom once empty except if global
+            if (allClients.isEmpty()) { // close chatroom once empty except if global, global is a reserved name
                 if (name != "Global") {
                     System.out.println("Chatroom is empty and killed");
                     return false;
